@@ -1,0 +1,155 @@
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { Sprint } from '@/types/sprint';
+
+interface VelocityChartProps {
+  sprints: Sprint[];
+  detailed?: boolean;
+}
+
+export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed = false }) => {
+  const chartData = sprints.map((sprint, index) => ({
+    name: sprint.name,
+    planned: sprint.plannedPoints,
+    completed: sprint.completedPoints,
+    velocity: sprint.velocity,
+    completionRatio: sprint.completionRatio,
+    sprintNumber: index + 1
+  }));
+
+  if (detailed) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardHeader>
+            <CardTitle>Velocity Trend Analysis</CardTitle>
+            <CardDescription>
+              Track your team's velocity over time to identify patterns and improvements
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="name" 
+                    className="text-muted-foreground"
+                  />
+                  <YAxis className="text-muted-foreground" />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="planned" 
+                    stroke="hsl(var(--muted-foreground))" 
+                    strokeWidth={2}
+                    strokeDasharray="5 5"
+                    name="Planned Points"
+                  />
+                  <Line 
+                    type="monotone" 
+                    dataKey="completed" 
+                    stroke="hsl(var(--primary))" 
+                    strokeWidth={3}
+                    name="Completed Points"
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
+            <CardTitle>Completion Ratio by Sprint</CardTitle>
+            <CardDescription>
+              Percentage of planned work completed in each sprint
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-80">
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={chartData}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis 
+                    dataKey="name" 
+                    className="text-muted-foreground"
+                  />
+                  <YAxis 
+                    className="text-muted-foreground"
+                    domain={[0, 100]}
+                  />
+                  <Tooltip 
+                    contentStyle={{
+                      backgroundColor: 'hsl(var(--card))',
+                      border: '1px solid hsl(var(--border))',
+                      borderRadius: '8px'
+                    }}
+                    formatter={(value: number) => [`${value}%`, 'Completion Rate']}
+                  />
+                  <Bar 
+                    dataKey="completionRatio" 
+                    fill="hsl(var(--accent))"
+                    radius={[4, 4, 0, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Velocity Overview</CardTitle>
+        <CardDescription>
+          Planned vs completed story points across sprints
+        </CardDescription>
+      </CardHeader>
+      <CardContent>
+        <div className="h-64">
+          <ResponsiveContainer width="100%" height="100%">
+            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+              <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+              <XAxis 
+                dataKey="name" 
+                className="text-muted-foreground"
+                fontSize={12}
+              />
+              <YAxis className="text-muted-foreground" fontSize={12} />
+              <Tooltip 
+                contentStyle={{
+                  backgroundColor: 'hsl(var(--card))',
+                  border: '1px solid hsl(var(--border))',
+                  borderRadius: '8px'
+                }}
+              />
+              <Bar 
+                dataKey="planned" 
+                fill="hsl(var(--muted-foreground))" 
+                name="Planned"
+                radius={[2, 2, 0, 0]}
+              />
+              <Bar 
+                dataKey="completed" 
+                fill="hsl(var(--primary))" 
+                name="Completed"
+                radius={[2, 2, 0, 0]}
+              />
+            </BarChart>
+          </ResponsiveContainer>
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
