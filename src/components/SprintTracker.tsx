@@ -22,6 +22,7 @@ export const SprintTracker: React.FC = () => {
       completionRatio: 87.5,
       velocity: 28,
       teamCapacity: 8,
+      teamAvailability: 90,
       notes: 'Good sprint, one story moved to next sprint'
     },
     {
@@ -34,6 +35,7 @@ export const SprintTracker: React.FC = () => {
       completionRatio: 100,
       velocity: 30,
       teamCapacity: 8,
+      teamAvailability: 100,
       notes: 'Excellent delivery, all stories completed'
     },
     {
@@ -46,6 +48,7 @@ export const SprintTracker: React.FC = () => {
       completionRatio: 74.3,
       velocity: 26,
       teamCapacity: 7,
+      teamAvailability: 85,
       notes: 'One team member on vacation, technical debt addressed'
     }
   ]);
@@ -217,6 +220,7 @@ export const SprintTracker: React.FC = () => {
         {showForm && (
           <SprintForm
             sprint={editingSprint}
+            sprints={sprints}
             onSubmit={editingSprint ? handleEditSprint : handleAddSprint}
             onCancel={() => {
               setShowForm(false);

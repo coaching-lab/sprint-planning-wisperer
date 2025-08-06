@@ -9,11 +9,12 @@ import { Sprint } from '@/types/sprint';
 
 interface SprintFormProps {
   sprint?: Sprint;
+  sprints: Sprint[];
   onSubmit: (sprint: Omit<Sprint, 'id' | 'completionRatio' | 'velocity'>) => void;
   onCancel: () => void;
 }
 
-export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCancel }) => {
+export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmit, onCancel }) => {
   const [formData, setFormData] = useState({
     name: '',
     startDate: '',
@@ -25,6 +26,14 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
     notes: ''
   });
 
+  // Calculate team capacity as average velocity of last 5 sprints
+  const calculateTeamCapacity = () => {
+    if (sprints.length === 0) return 0;
+    const lastFiveSprints = sprints.slice(-5);
+    const avgVelocity = lastFiveSprints.reduce((sum, s) => sum + s.velocity, 0) / lastFiveSprints.length;
+    return Math.round(avgVelocity * 10) / 10; // Round to 1 decimal
+  };
+
   useEffect(() => {
     if (sprint) {
       setFormData({
@@ -33,12 +42,18 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
         endDate: sprint.endDate,
         plannedPoints: sprint.plannedPoints.toString(),
         completedPoints: sprint.completedPoints.toString(),
-        teamCapacity: sprint.teamCapacity?.toString() || '',
-        teamAvailability: sprint.teamAvailability?.toString() || '',
+        teamCapacity: sprint.teamCapacity?.toString() || calculateTeamCapacity().toString(),
+        teamAvailability: sprint.teamAvailability.toString(),
         notes: sprint.notes || ''
       });
+    } else {
+      // For new sprints, auto-calculate team capacity
+      setFormData(prev => ({
+        ...prev,
+        teamCapacity: calculateTeamCapacity().toString()
+      }));
     }
-  }, [sprint]);
+  }, [sprint, sprints]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,8 +64,8 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
       endDate: formData.endDate,
       plannedPoints: parseFloat(formData.plannedPoints) || 0,
       completedPoints: parseFloat(formData.completedPoints) || 0,
-      teamCapacity: formData.teamCapacity ? parseFloat(formData.teamCapacity) : undefined,
-      teamAvailability: formData.teamAvailability ? parseFloat(formData.teamAvailability) : undefined,
+      teamCapacity: parseFloat(formData.teamCapacity) || calculateTeamCapacity(),
+      teamAvailability: parseFloat(formData.teamAvailability) || 100,
       notes: formData.notes
     });
   };
@@ -130,19 +145,22 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
             </div>
 
             <div>
-              <Label htmlFor="teamCapacity">Team Capacity (optional)</Label>
+              <Label htmlFor="teamCapacity">Team Capacity (auto-calculated)</Label>
               <Input
                 id="teamCapacity"
                 type="number"
                 value={formData.teamCapacity}
-                onChange={(e) => setFormData(prev => ({ ...prev, teamCapacity: e.target.value }))}
-                placeholder="8"
-                min="1"
+                readOnly
+                className="bg-muted"
+                placeholder="Auto-calculated from last 5 sprints"
               />
+              <p className="text-xs text-muted-foreground mt-1">
+                Based on average velocity of last 5 sprints (100% capacity)
+              </p>
             </div>
 
             <div>
-              <Label htmlFor="teamAvailability">Team Availability % (optional)</Label>
+              <Label htmlFor="teamAvailability">Team Availability % *</Label>
               <Input
                 id="teamAvailability"
                 type="number"
@@ -152,6 +170,7 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
                 min="0"
                 max="100"
                 step="1"
+                required
               />
             </div>
 
