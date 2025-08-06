@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from 'recharts';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar, ComposedChart } from 'recharts';
 import { Sprint } from '@/types/sprint';
 
 interface VelocityChartProps {
@@ -113,13 +113,13 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
       <CardHeader>
         <CardTitle>Velocity Overview</CardTitle>
         <CardDescription>
-          Planned vs completed story points across sprints
+          Planned vs completed story points with velocity trend
         </CardDescription>
       </CardHeader>
       <CardContent>
         <div className="h-64">
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
+            <ComposedChart data={chartData} margin={{ top: 5, right: 30, left: 20, bottom: 5 }}>
               <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
               <XAxis 
                 dataKey="name" 
@@ -146,7 +146,15 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
                 name="Completed"
                 radius={[2, 2, 0, 0]}
               />
-            </BarChart>
+              <Line 
+                type="monotone" 
+                dataKey="velocity" 
+                stroke="hsl(var(--accent))" 
+                strokeWidth={3}
+                dot={{ fill: 'hsl(var(--accent))', strokeWidth: 2, r: 4 }}
+                name="Velocity"
+              />
+            </ComposedChart>
           </ResponsiveContainer>
         </div>
       </CardContent>
