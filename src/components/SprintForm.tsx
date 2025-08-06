@@ -35,6 +35,8 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmi
   };
 
   useEffect(() => {
+    const teamCapacity = calculateTeamCapacity();
+    
     if (sprint) {
       setFormData({
         name: sprint.name,
@@ -42,15 +44,16 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmi
         endDate: sprint.endDate,
         plannedPoints: sprint.plannedPoints.toString(),
         completedPoints: sprint.completedPoints.toString(),
-        teamCapacity: sprint.teamCapacity?.toString() || calculateTeamCapacity().toString(),
-        teamAvailability: sprint.teamAvailability.toString(),
+        teamCapacity: sprint.teamCapacity?.toString() || teamCapacity.toString(),
+        teamAvailability: sprint.teamAvailability?.toString() || '100',
         notes: sprint.notes || ''
       });
     } else {
-      // For new sprints, auto-calculate team capacity
+      // For new sprints, set defaults
       setFormData(prev => ({
         ...prev,
-        teamCapacity: calculateTeamCapacity().toString()
+        teamCapacity: teamCapacity.toString(),
+        teamAvailability: '100'
       }));
     }
   }, [sprint, sprints]);
