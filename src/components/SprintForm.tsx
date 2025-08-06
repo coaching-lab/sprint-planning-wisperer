@@ -21,6 +21,7 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
     plannedPoints: '',
     completedPoints: '',
     teamCapacity: '',
+    teamAvailability: '',
     notes: ''
   });
 
@@ -33,6 +34,7 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
         plannedPoints: sprint.plannedPoints.toString(),
         completedPoints: sprint.completedPoints.toString(),
         teamCapacity: sprint.teamCapacity?.toString() || '',
+        teamAvailability: sprint.teamAvailability?.toString() || '',
         notes: sprint.notes || ''
       });
     }
@@ -48,6 +50,7 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
       plannedPoints: parseFloat(formData.plannedPoints) || 0,
       completedPoints: parseFloat(formData.completedPoints) || 0,
       teamCapacity: formData.teamCapacity ? parseFloat(formData.teamCapacity) : undefined,
+      teamAvailability: formData.teamAvailability ? parseFloat(formData.teamAvailability) : undefined,
       notes: formData.notes
     });
   };
@@ -135,6 +138,20 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, onSubmit, onCanc
                 onChange={(e) => setFormData(prev => ({ ...prev, teamCapacity: e.target.value }))}
                 placeholder="8"
                 min="1"
+              />
+            </div>
+
+            <div>
+              <Label htmlFor="teamAvailability">Team Availability % (optional)</Label>
+              <Input
+                id="teamAvailability"
+                type="number"
+                value={formData.teamAvailability}
+                onChange={(e) => setFormData(prev => ({ ...prev, teamAvailability: e.target.value }))}
+                placeholder="85"
+                min="0"
+                max="100"
+                step="1"
               />
             </div>
 

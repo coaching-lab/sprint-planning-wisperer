@@ -8,6 +8,7 @@ export interface Sprint {
   completionRatio: number;
   velocity: number;
   teamCapacity?: number;
+  teamAvailability?: number;
   notes?: string;
 }
 
