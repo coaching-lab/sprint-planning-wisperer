@@ -2,16 +2,17 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Calendar, Target, TrendingUp, Users } from 'lucide-react';
+import { Edit, Trash2, Calendar, Target, TrendingUp, Users, Settings } from 'lucide-react';
 import { Sprint } from '@/types/sprint';
 
 interface SprintListProps {
   sprints: Sprint[];
   onEdit: (sprint: Sprint) => void;
   onDelete: (id: string) => void;
+  onManageSprints: () => void;
 }
 
-export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelete }) => {
+export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelete, onManageSprints }) => {
   const getCompletionBadgeVariant = (ratio: number) => {
     if (ratio >= 90) return 'default';
     if (ratio >= 75) return 'secondary';
@@ -44,9 +45,15 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelet
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h2 className="text-xl font-semibold">Sprint History</h2>
-        <Badge variant="outline" className="px-3 py-1">
-          {sprints.length} Sprint{sprints.length !== 1 ? 's' : ''}
-        </Badge>
+        <div className="flex items-center gap-2">
+          <Badge variant="outline" className="px-3 py-1">
+            {sprints.length} Sprint{sprints.length !== 1 ? 's' : ''}
+          </Badge>
+          <Button variant="outline" size="sm" onClick={onManageSprints}>
+            <Settings className="h-4 w-4 mr-2" />
+            Manage Sprints
+          </Button>
+        </div>
       </div>
 
       <div className="grid gap-4">

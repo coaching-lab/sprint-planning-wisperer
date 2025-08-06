@@ -9,6 +9,7 @@ import { SprintList } from './SprintList';
 import { VelocityChart } from './VelocityChart';
 import { MetricsOverview } from './MetricsOverview';
 import { ForecastPanel } from './ForecastPanel';
+import { ManageSprints } from './ManageSprints';
 
 export const SprintTracker: React.FC = () => {
   const [sprints, setSprints] = useState<Sprint[]>([
@@ -55,6 +56,7 @@ export const SprintTracker: React.FC = () => {
   
   const [showForm, setShowForm] = useState(false);
   const [editingSprint, setEditingSprint] = useState<Sprint | undefined>();
+  const [showManageSprints, setShowManageSprints] = useState(false);
 
   const calculateMetrics = (): SprintMetrics => {
     if (sprints.length === 0) {
@@ -116,6 +118,15 @@ export const SprintTracker: React.FC = () => {
 
   const handleDeleteSprint = (id: string) => {
     setSprints(prev => prev.filter(sprint => sprint.id !== id));
+  };
+
+  const handleManageSprints = () => {
+    setShowManageSprints(true);
+  };
+
+  const handleSaveManageSprints = (updatedSprints: Sprint[]) => {
+    setSprints(updatedSprints);
+    setShowManageSprints(false);
   };
 
   const metrics = calculateMetrics();
@@ -204,6 +215,7 @@ export const SprintTracker: React.FC = () => {
                 setShowForm(true);
               }}
               onDelete={handleDeleteSprint}
+              onManageSprints={handleManageSprints}
             />
           </TabsContent>
 
@@ -226,6 +238,15 @@ export const SprintTracker: React.FC = () => {
               setShowForm(false);
               setEditingSprint(undefined);
             }}
+          />
+        )}
+
+        {/* Manage Sprints Modal */}
+        {showManageSprints && (
+          <ManageSprints
+            sprints={sprints}
+            onSave={handleSaveManageSprints}
+            onClose={() => setShowManageSprints(false)}
           />
         )}
       </div>
