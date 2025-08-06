@@ -2,7 +2,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Edit, Trash2, Calendar, Target, TrendingUp } from 'lucide-react';
+import { Edit, Trash2, Calendar, Target, TrendingUp, Users } from 'lucide-react';
 import { Sprint } from '@/types/sprint';
 
 interface SprintListProps {
@@ -70,6 +70,10 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelet
                     {sprint.teamCapacity && (
                       <span>Team: {sprint.teamCapacity} members</span>
                     )}
+                    <div className="flex items-center gap-1">
+                      <Users className="h-4 w-4" />
+                      <span>Availability: {sprint.teamAvailability}%</span>
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-6 text-sm">
