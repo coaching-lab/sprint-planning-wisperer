@@ -22,6 +22,19 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { toast } = useToast();
 
+  // Calculate average velocity from existing sprints
+  const calculateAverageVelocity = () => {
+    if (editableSprints.length === 0) return 0;
+    const totalVelocity = editableSprints.reduce((sum, sprint) => sum + sprint.velocity, 0);
+    return Math.round(totalVelocity / editableSprints.length);
+  };
+
+  // Calculate team capacity based on average velocity and availability
+  const calculateTeamCapacity = (teamAvailability: number) => {
+    const avgVelocity = calculateAverageVelocity();
+    return Math.round((avgVelocity * teamAvailability) / 100);
+  };
+
   const handleFieldChange = (id: string, field: keyof Sprint, value: string | number) => {
     setEditableSprints(prev => 
       prev.map(sprint => 
@@ -29,12 +42,16 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
           ? { 
               ...sprint, 
               [field]: value,
-              // Recalculate completion ratio and velocity when relevant fields change
+              // Recalculate completion ratio, velocity, and team capacity when relevant fields change
               ...(field === 'plannedPoints' || field === 'completedPoints' ? {
                 completionRatio: field === 'completedPoints' || field === 'plannedPoints' 
                   ? Math.round(((field === 'completedPoints' ? Number(value) : sprint.completedPoints) / (field === 'plannedPoints' ? Number(value) : sprint.plannedPoints)) * 1000) / 10
                   : sprint.completionRatio,
                 velocity: field === 'completedPoints' ? Number(value) : sprint.velocity
+              } : {}),
+              // Recalculate team capacity when team availability changes
+              ...(field === 'teamAvailability' ? {
+                teamCapacity: calculateTeamCapacity(Number(value))
               } : {})
             }
           : sprint
@@ -52,7 +69,7 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
       completedPoints: 0,
       completionRatio: 0,
       velocity: 0,
-      teamCapacity: 0,
+      teamCapacity: calculateTeamCapacity(100),
       teamAvailability: 100,
       notes: ''
     };
@@ -92,7 +109,7 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
         completedPoints: data.completedPoints,
         completionRatio: data.plannedPoints > 0 ? Math.round((data.completedPoints / data.plannedPoints) * 1000) / 10 : 0,
         velocity: data.completedPoints,
-        teamCapacity: data.teamCapacity,
+        teamCapacity: calculateTeamCapacity(data.teamAvailability),
         teamAvailability: data.teamAvailability,
         notes: data.notes
       }));
@@ -220,13 +237,9 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
                     />
                   </TableCell>
                   <TableCell>
-                    <Input
-                      type="number"
-                      value={sprint.teamCapacity || ''}
-                      onChange={(e) => handleFieldChange(sprint.id, 'teamCapacity', parseFloat(e.target.value) || 0)}
-                      className="h-8"
-                      min="0"
-                    />
+                    <div className="h-8 flex items-center px-3 text-sm text-muted-foreground">
+                      {sprint.teamCapacity || 0}
+                    </div>
                   </TableCell>
                   <TableCell>
                     <Input
