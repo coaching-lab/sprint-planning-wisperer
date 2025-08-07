@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Plus, TrendingUp, Target, BarChart3 } from 'lucide-react';
 import { Sprint, SprintMetrics } from '@/types/sprint';
 import { SprintForm } from './SprintForm';
@@ -57,8 +58,9 @@ export const SprintTracker: React.FC = () => {
   const [showForm, setShowForm] = useState(false);
   const [editingSprint, setEditingSprint] = useState<Sprint | undefined>();
   const [showManageSprints, setShowManageSprints] = useState(false);
+  const [recentSprintsCount, setRecentSprintsCount] = useState(5);
 
-  const calculateMetrics = (): SprintMetrics => {
+  const calculateMetrics = (recentCount: number = recentSprintsCount): SprintMetrics => {
     if (sprints.length === 0) {
       return {
         averageVelocity: 0,
@@ -73,7 +75,7 @@ export const SprintTracker: React.FC = () => {
     const totalCompletionRatio = sprints.reduce((sum, sprint) => sum + sprint.completionRatio, 0);
     
     // Calculate predicted velocity using weighted average (same as forecast panel)
-    const recentSprints = sprints.slice(-5); // Last 5 sprints
+    const recentSprints = sprints.slice(-Math.min(recentCount, sprints.length)); // Last N sprints
     let weightedSum = 0;
     let totalWeight = 0;
 
@@ -164,7 +166,31 @@ export const SprintTracker: React.FC = () => {
         </div>
 
         {/* Metrics Overview */}
-        <MetricsOverview metrics={metrics} />
+        <div className="space-y-4">
+          <div className="flex items-center justify-between">
+            <h2 className="text-xl font-semibold">Key Metrics</h2>
+            <div className="flex items-center gap-2">
+              <span className="text-sm text-muted-foreground">Based on last</span>
+              <Select
+                value={recentSprintsCount.toString()}
+                onValueChange={(value) => setRecentSprintsCount(Number(value))}
+              >
+                <SelectTrigger className="w-20">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="3">3</SelectItem>
+                  <SelectItem value="5">5</SelectItem>
+                  <SelectItem value="8">8</SelectItem>
+                  <SelectItem value="10">10</SelectItem>
+                  <SelectItem value={sprints.length.toString()}>All</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="text-sm text-muted-foreground">sprints</span>
+            </div>
+          </div>
+          <MetricsOverview metrics={metrics} />
+        </div>
 
         {/* Main Content */}
         <Tabs defaultValue="overview" className="space-y-6">
