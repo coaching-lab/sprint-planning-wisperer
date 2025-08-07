@@ -11,7 +11,7 @@ interface VelocityChartProps {
 
 export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed = false, recentSprintsCount }) => {
   // Filter to recent sprints if specified - sort by start date descending (most recent first) then take first X
-  const filteredSprints = recentSprintsCount && detailed 
+  const filteredSprints = recentSprintsCount
     ? [...sprints]
         .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
         .slice(0, Math.min(recentSprintsCount, sprints.length))

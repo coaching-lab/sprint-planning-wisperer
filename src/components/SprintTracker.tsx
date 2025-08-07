@@ -220,17 +220,20 @@ export const SprintTracker: React.FC = () => {
 
           <TabsContent value="overview" className="space-y-6">
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              <VelocityChart sprints={sprints} />
+              <VelocityChart sprints={sprints} recentSprintsCount={recentSprintsCount} />
               <Card>
                 <CardHeader>
                   <CardTitle>Recent Performance</CardTitle>
                   <CardDescription>
-                    Last 5 sprints completion rates
+                    Last {recentSprintsCount} sprint{recentSprintsCount !== 1 ? 's' : ''} completion rates
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
-                    {sprints.slice(-5).reverse().map((sprint) => (
+                    {[...sprints]
+                      .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+                      .slice(0, Math.min(recentSprintsCount, sprints.length))
+                      .map((sprint) => (
                       <div key={sprint.id} className="flex items-center justify-between">
                         <span className="font-medium">{sprint.name}</span>
                         <div className="flex items-center gap-2">
