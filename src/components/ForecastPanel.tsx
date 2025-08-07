@@ -8,9 +8,10 @@ import { Sprint, SprintMetrics, ForecastData } from '@/types/sprint';
 interface ForecastPanelProps {
   sprints: Sprint[];
   metrics: SprintMetrics;
+  recentSprintsCount: number;
 }
 
-export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics }) => {
+export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, recentSprintsCount }) => {
   const calculateForecast = (): ForecastData => {
     if (sprints.length < 2) {
       return {
@@ -21,7 +22,7 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics }
     }
 
     // Use weighted average with more recent sprints having higher weight
-    const recentSprints = sprints.slice(-5); // Last 5 sprints
+    const recentSprints = sprints.slice(-Math.min(recentSprintsCount, sprints.length)); // Use selected count
     let weightedSum = 0;
     let totalWeight = 0;
 
