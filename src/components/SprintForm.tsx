@@ -26,34 +26,39 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmi
     notes: ''
   });
 
-  // Calculate team capacity as average velocity of last 5 sprints
-  const calculateTeamCapacity = () => {
+  // Calculate average velocity from all sprints
+  const calculateAverageVelocity = () => {
     if (sprints.length === 0) return 0;
-    const lastFiveSprints = sprints.slice(-5);
-    const avgVelocity = lastFiveSprints.reduce((sum, s) => sum + s.velocity, 0) / lastFiveSprints.length;
-    return Math.round(avgVelocity * 10) / 10; // Round to 1 decimal
+    const totalVelocity = sprints.reduce((sum, s) => sum + s.velocity, 0);
+    return Math.round(totalVelocity / sprints.length);
+  };
+
+  // Calculate team capacity based on average velocity and availability
+  const calculateTeamCapacity = (teamAvailability: number) => {
+    const avgVelocity = calculateAverageVelocity();
+    return Math.round((avgVelocity * teamAvailability) / 100);
   };
 
   useEffect(() => {
-    const teamCapacity = calculateTeamCapacity();
-    
     if (sprint) {
+      const initialAvailability = sprint.teamAvailability || 100;
       setFormData({
         name: sprint.name,
         startDate: sprint.startDate,
         endDate: sprint.endDate,
         plannedPoints: sprint.plannedPoints.toString(),
         completedPoints: sprint.completedPoints.toString(),
-        teamCapacity: sprint.teamCapacity?.toString() || teamCapacity.toString(),
-        teamAvailability: sprint.teamAvailability?.toString() || '100',
+        teamCapacity: calculateTeamCapacity(initialAvailability).toString(),
+        teamAvailability: initialAvailability.toString(),
         notes: sprint.notes || ''
       });
     } else {
       // For new sprints, set defaults
+      const defaultAvailability = 100;
       setFormData(prev => ({
         ...prev,
-        teamCapacity: teamCapacity.toString(),
-        teamAvailability: '100'
+        teamCapacity: calculateTeamCapacity(defaultAvailability).toString(),
+        teamAvailability: defaultAvailability.toString()
       }));
     }
   }, [sprint, sprints]);
@@ -67,7 +72,7 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmi
       endDate: formData.endDate,
       plannedPoints: parseFloat(formData.plannedPoints) || 0,
       completedPoints: parseFloat(formData.completedPoints) || 0,
-      teamCapacity: parseFloat(formData.teamCapacity) || calculateTeamCapacity(),
+      teamCapacity: parseFloat(formData.teamCapacity) || calculateTeamCapacity(parseFloat(formData.teamAvailability) || 100),
       teamAvailability: parseFloat(formData.teamAvailability) || 100,
       notes: formData.notes
     });
@@ -158,7 +163,7 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmi
                 placeholder="Auto-calculated from last 5 sprints"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Based on average velocity of last 5 sprints (100% capacity)
+                Calculated from average velocity and team availability
               </p>
             </div>
 
@@ -168,7 +173,14 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmi
                 id="teamAvailability"
                 type="number"
                 value={formData.teamAvailability}
-                onChange={(e) => setFormData(prev => ({ ...prev, teamAvailability: e.target.value }))}
+                onChange={(e) => {
+                  const availability = parseFloat(e.target.value) || 0;
+                  setFormData(prev => ({ 
+                    ...prev, 
+                    teamAvailability: e.target.value,
+                    teamCapacity: calculateTeamCapacity(availability).toString()
+                  }));
+                }}
                 placeholder="85"
                 min="0"
                 max="100"
