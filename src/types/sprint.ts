@@ -18,6 +18,7 @@ export interface SprintMetrics {
   totalSprints: number;
   predictedVelocity: number;
   forecastAccuracy?: number;
+  teamAvailabilityConsistency: number;
 }
 
 export interface ForecastData {

@@ -64,18 +64,26 @@ export const SprintTracker: React.FC = () => {
         averageVelocity: 0,
         averageCompletionRatio: 0,
         totalSprints: 0,
-        predictedVelocity: 0
+        predictedVelocity: 0,
+        teamAvailabilityConsistency: 0
       };
     }
 
     const totalVelocity = sprints.reduce((sum, sprint) => sum + sprint.velocity, 0);
     const totalCompletionRatio = sprints.reduce((sum, sprint) => sum + sprint.completionRatio, 0);
     
+    // Calculate team availability consistency (standard deviation from average)
+    const avgAvailability = sprints.reduce((sum, sprint) => sum + sprint.teamAvailability, 0) / sprints.length;
+    const variance = sprints.reduce((sum, sprint) => sum + Math.pow(sprint.teamAvailability - avgAvailability, 2), 0) / sprints.length;
+    const standardDeviation = Math.sqrt(variance);
+    const consistency = Math.max(0, 100 - standardDeviation); // Higher = more consistent
+    
     return {
       averageVelocity: Math.round(totalVelocity / sprints.length),
       averageCompletionRatio: Math.round(totalCompletionRatio / sprints.length),
       totalSprints: sprints.length,
-      predictedVelocity: Math.round(totalVelocity / sprints.length)
+      predictedVelocity: Math.round(totalVelocity / sprints.length),
+      teamAvailabilityConsistency: Math.round(consistency)
     };
   };
 

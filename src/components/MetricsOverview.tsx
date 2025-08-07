@@ -1,6 +1,6 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { TrendingUp, Target, BarChart3, Zap } from 'lucide-react';
+import { TrendingUp, Target, BarChart3, Zap, Users } from 'lucide-react';
 import { SprintMetrics } from '@/types/sprint';
 
 interface MetricsOverviewProps {
@@ -40,11 +40,19 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({ metrics }) => 
       icon: Zap,
       description: 'Next sprint forecast',
       color: 'text-warning'
+    },
+    {
+      title: 'Team Consistency',
+      value: metrics.teamAvailabilityConsistency,
+      suffix: '%',
+      icon: Users,
+      description: 'Availability stability',
+      color: 'text-info'
     }
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
       {metricCards.map((metric, index) => (
         <Card key={index} className="hover:shadow-md transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
