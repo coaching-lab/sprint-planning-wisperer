@@ -7,12 +7,13 @@ import { Sprint } from '@/types/sprint';
 
 interface SprintListProps {
   sprints: Sprint[];
+  recentSprintsCount: number;
   onEdit: (sprint: Sprint) => void;
   onDelete: (id: string) => void;
   onManageSprints: () => void;
 }
 
-export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelete, onManageSprints }) => {
+export const SprintList: React.FC<SprintListProps> = ({ sprints, recentSprintsCount, onEdit, onDelete, onManageSprints }) => {
   const getCompletionBadgeVariant = (ratio: number) => {
     if (ratio >= 90) return 'default';
     if (ratio >= 75) return 'secondary';
@@ -26,6 +27,18 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelet
       year: 'numeric'
     });
   };
+
+  // Get the IDs of recent sprints for highlighting
+  const getRecentSprintIds = () => {
+    const sortedSprints = [...sprints].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+    return sortedSprints
+      .slice(0, Math.min(recentSprintsCount, sprints.length))
+      .map(sprint => sprint.id);
+  };
+
+  const recentSprintIds = getRecentSprintIds();
 
   if (sprints.length === 0) {
     return (
@@ -59,13 +72,25 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelet
       <div className="grid gap-4">
         {sprints
           .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
-          .map((sprint) => (
-          <Card key={sprint.id} className="hover:shadow-md transition-shadow">
+          .map((sprint) => {
+            const isRecent = recentSprintIds.includes(sprint.id);
+            return (
+          <Card 
+            key={sprint.id} 
+            className={`hover:shadow-md transition-all ${
+              isRecent ? 'ring-2 ring-primary bg-primary/5' : ''
+            }`}
+          >
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-3">
                     <h3 className="font-semibold text-lg">{sprint.name}</h3>
+                    {isRecent && (
+                      <Badge variant="outline" className="text-primary border-primary bg-primary/10">
+                        Recent
+                      </Badge>
+                    )}
                     <Badge variant={getCompletionBadgeVariant(sprint.completionRatio)}>
                       {sprint.completionRatio}% Complete
                     </Badge>
@@ -142,8 +167,9 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelet
               </div>
             </CardContent>
           </Card>
-        ))}
-      </div>
+            );
+          })}
+        </div>
     </div>
   );
 };

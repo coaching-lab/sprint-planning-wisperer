@@ -256,6 +256,7 @@ export const SprintTracker: React.FC = () => {
           <TabsContent value="sprints">
             <SprintList 
               sprints={sprints}
+              recentSprintsCount={recentSprintsCount}
               onEdit={(sprint) => {
                 setEditingSprint(sprint);
                 setShowForm(true);
