@@ -156,20 +156,11 @@ export const SprintTracker: React.FC = () => {
     <div className="min-h-screen bg-background p-4 md:p-6">
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
-        <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
-          <div>
-            <h1 className="text-3xl font-bold text-foreground mb-2">Sprint Velocity Tracker</h1>
-            <p className="text-muted-foreground">
-              Track sprint performance, analyze velocity trends, and forecast future capacity
-            </p>
-          </div>
-          <Button 
-            onClick={() => setShowForm(true)}
-            className="bg-gradient-to-r from-primary to-primary-glow hover:opacity-90 transition-all duration-300 shadow-lg"
-          >
-            <Plus className="mr-2 h-4 w-4" />
-            Add Sprint
-          </Button>
+        <div>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Sprint Velocity Tracker</h1>
+          <p className="text-muted-foreground">
+            Track sprint performance, analyze velocity trends, and forecast future capacity
+          </p>
         </div>
 
         {/* Metrics Overview */}
