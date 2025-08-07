@@ -147,7 +147,7 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
       <CardHeader>
         <CardTitle>Velocity Overview</CardTitle>
         <CardDescription>
-          Completed story points with velocity trend
+          Planned vs completed story points for each sprint
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -169,10 +169,16 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
                 }}
               />
               <Bar 
-                dataKey="velocity" 
+                dataKey="planned" 
+                fill="hsl(var(--muted-foreground))" 
+                name="Planned"
+                radius={[2, 2, 0, 0]}
+              />
+              <Bar 
+                dataKey="completed" 
                 fill="hsl(var(--primary))" 
-                name="Velocity"
-                radius={[4, 4, 0, 0]}
+                name="Completed"
+                radius={[2, 2, 0, 0]}
               />
             </BarChart>
           </ResponsiveContainer>
