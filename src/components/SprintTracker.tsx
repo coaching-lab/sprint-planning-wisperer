@@ -71,11 +71,13 @@ export const SprintTracker: React.FC = () => {
       };
     }
 
-    const totalVelocity = sprints.reduce((sum, sprint) => sum + sprint.velocity, 0);
-    const totalCompletionRatio = sprints.reduce((sum, sprint) => sum + sprint.completionRatio, 0);
+    // Use only the recent sprints for all calculations
+    const recentSprints = sprints.slice(-Math.min(recentCount, sprints.length)); // Last N sprints
+    
+    const totalVelocity = recentSprints.reduce((sum, sprint) => sum + sprint.velocity, 0);
+    const totalCompletionRatio = recentSprints.reduce((sum, sprint) => sum + sprint.completionRatio, 0);
     
     // Calculate predicted velocity using weighted average (same as forecast panel)
-    const recentSprints = sprints.slice(-Math.min(recentCount, sprints.length)); // Last N sprints
     let weightedSum = 0;
     let totalWeight = 0;
 
@@ -87,16 +89,16 @@ export const SprintTracker: React.FC = () => {
 
     const predictedVelocity = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
     
-    // Calculate team availability consistency (standard deviation from average)
-    const avgAvailability = sprints.reduce((sum, sprint) => sum + sprint.teamAvailability, 0) / sprints.length;
-    const variance = sprints.reduce((sum, sprint) => sum + Math.pow(sprint.teamAvailability - avgAvailability, 2), 0) / sprints.length;
+    // Calculate team availability consistency (standard deviation from average) using recent sprints
+    const avgAvailability = recentSprints.reduce((sum, sprint) => sum + sprint.teamAvailability, 0) / recentSprints.length;
+    const variance = recentSprints.reduce((sum, sprint) => sum + Math.pow(sprint.teamAvailability - avgAvailability, 2), 0) / recentSprints.length;
     const standardDeviation = Math.sqrt(variance);
     const consistency = Math.max(0, 100 - standardDeviation); // Higher = more consistent
     
     return {
-      averageVelocity: Math.round(totalVelocity / sprints.length),
-      averageCompletionRatio: Math.round(totalCompletionRatio / sprints.length),
-      totalSprints: sprints.length,
+      averageVelocity: Math.round(totalVelocity / recentSprints.length),
+      averageCompletionRatio: Math.round(totalCompletionRatio / recentSprints.length),
+      totalSprints: recentSprints.length,
       predictedVelocity,
       teamAvailabilityConsistency: Math.round(consistency)
     };
