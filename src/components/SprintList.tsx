@@ -57,7 +57,9 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelet
       </div>
 
       <div className="grid gap-4">
-        {sprints.map((sprint) => (
+        {sprints
+          .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+          .map((sprint) => (
           <Card key={sprint.id} className="hover:shadow-md transition-shadow">
             <CardContent className="p-6">
               <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
