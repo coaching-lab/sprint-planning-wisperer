@@ -72,6 +72,19 @@ export const SprintTracker: React.FC = () => {
     const totalVelocity = sprints.reduce((sum, sprint) => sum + sprint.velocity, 0);
     const totalCompletionRatio = sprints.reduce((sum, sprint) => sum + sprint.completionRatio, 0);
     
+    // Calculate predicted velocity using weighted average (same as forecast panel)
+    const recentSprints = sprints.slice(-5); // Last 5 sprints
+    let weightedSum = 0;
+    let totalWeight = 0;
+
+    recentSprints.forEach((sprint, index) => {
+      const weight = index + 1; // More recent sprints get higher weight
+      weightedSum += sprint.velocity * weight;
+      totalWeight += weight;
+    });
+
+    const predictedVelocity = totalWeight > 0 ? Math.round(weightedSum / totalWeight) : 0;
+    
     // Calculate team availability consistency (standard deviation from average)
     const avgAvailability = sprints.reduce((sum, sprint) => sum + sprint.teamAvailability, 0) / sprints.length;
     const variance = sprints.reduce((sum, sprint) => sum + Math.pow(sprint.teamAvailability - avgAvailability, 2), 0) / sprints.length;
@@ -82,7 +95,7 @@ export const SprintTracker: React.FC = () => {
       averageVelocity: Math.round(totalVelocity / sprints.length),
       averageCompletionRatio: Math.round(totalCompletionRatio / sprints.length),
       totalSprints: sprints.length,
-      predictedVelocity: Math.round(totalVelocity / sprints.length),
+      predictedVelocity,
       teamAvailabilityConsistency: Math.round(consistency)
     };
   };
