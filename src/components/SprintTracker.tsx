@@ -22,7 +22,7 @@ export const SprintTracker: React.FC = () => {
       completedPoints: 28,
       completionRatio: 87.5,
       velocity: 28,
-      teamCapacity: 8,
+      teamCapacity: 25, // (28 avg velocity × 90% availability) ÷ 100
       teamAvailability: 90,
       notes: 'Good sprint, one story moved to next sprint'
     },
@@ -35,7 +35,7 @@ export const SprintTracker: React.FC = () => {
       completedPoints: 30,
       completionRatio: 100,
       velocity: 30,
-      teamCapacity: 8,
+      teamCapacity: 28, // (28 avg velocity × 100% availability) ÷ 100
       teamAvailability: 100,
       notes: 'Excellent delivery, all stories completed'
     },
@@ -48,7 +48,7 @@ export const SprintTracker: React.FC = () => {
       completedPoints: 26,
       completionRatio: 74.3,
       velocity: 26,
-      teamCapacity: 7,
+      teamCapacity: 24, // (28 avg velocity × 85% availability) ÷ 100
       teamAvailability: 85,
       notes: 'One team member on vacation, technical debt addressed'
     }
