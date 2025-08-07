@@ -152,7 +152,7 @@ export const SprintTracker: React.FC = () => {
     setShowManageSprints(false);
   };
 
-  const metrics = calculateMetrics();
+  const metrics = calculateMetrics(recentSprintsCount);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
