@@ -15,6 +15,7 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
     completed: sprint.completedPoints,
     velocity: sprint.velocity,
     completionRatio: sprint.completionRatio,
+    teamAvailability: sprint.teamAvailability,
     sprintNumber: index + 1
   }));
 
@@ -31,13 +32,22 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
           <CardContent>
             <div className="h-80">
               <ResponsiveContainer width="100%" height="100%">
-                <LineChart data={chartData}>
+                <ComposedChart data={chartData}>
                   <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
                   <XAxis 
                     dataKey="name" 
                     className="text-muted-foreground"
                   />
-                  <YAxis className="text-muted-foreground" />
+                  <YAxis 
+                    yAxisId="left"
+                    className="text-muted-foreground" 
+                  />
+                  <YAxis 
+                    yAxisId="right"
+                    orientation="right"
+                    className="text-muted-foreground"
+                    domain={[0, 100]}
+                  />
                   <Tooltip 
                     contentStyle={{
                       backgroundColor: 'hsl(var(--card))',
@@ -46,6 +56,7 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
                     }}
                   />
                   <Line 
+                    yAxisId="left"
                     type="monotone" 
                     dataKey="planned" 
                     stroke="hsl(var(--muted-foreground))" 
@@ -54,13 +65,23 @@ export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed 
                     name="Planned Points"
                   />
                   <Line 
+                    yAxisId="left"
                     type="monotone" 
                     dataKey="completed" 
                     stroke="hsl(var(--primary))" 
                     strokeWidth={3}
                     name="Completed Points"
                   />
-                </LineChart>
+                  <Line 
+                    yAxisId="right"
+                    type="monotone" 
+                    dataKey="teamAvailability" 
+                    stroke="hsl(var(--accent))" 
+                    strokeWidth={2}
+                    dot={{ fill: 'hsl(var(--accent))', strokeWidth: 2, r: 4 }}
+                    name="Team Availability (%)"
+                  />
+                </ComposedChart>
               </ResponsiveContainer>
             </div>
           </CardContent>
