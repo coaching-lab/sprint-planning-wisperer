@@ -260,7 +260,7 @@ export const SprintTracker: React.FC = () => {
           </TabsContent>
 
           <TabsContent value="trends">
-            <VelocityChart sprints={sprints} detailed />
+            <VelocityChart sprints={sprints} detailed recentSprintsCount={recentSprintsCount} />
           </TabsContent>
 
           <TabsContent value="forecast">

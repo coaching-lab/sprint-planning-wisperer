@@ -6,10 +6,21 @@ import { Sprint } from '@/types/sprint';
 interface VelocityChartProps {
   sprints: Sprint[];
   detailed?: boolean;
+  recentSprintsCount?: number;
 }
 
-export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed = false }) => {
-  const chartData = sprints.map((sprint, index) => ({
+export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed = false, recentSprintsCount }) => {
+  // Filter to recent sprints if specified, then sort by start date
+  const filteredSprints = recentSprintsCount && detailed 
+    ? sprints.slice(-Math.min(recentSprintsCount, sprints.length))
+    : sprints;
+  
+  // Sort by start date (oldest first for trend analysis)
+  const sortedSprints = [...filteredSprints].sort((a, b) => 
+    new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
+  );
+
+  const chartData = sortedSprints.map((sprint, index) => ({
     name: sprint.name,
     planned: sprint.plannedPoints,
     completed: sprint.completedPoints,
