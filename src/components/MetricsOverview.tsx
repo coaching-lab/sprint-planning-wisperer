@@ -34,14 +34,6 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({ metrics }) => 
       color: 'text-accent'
     },
     {
-      title: 'Predicted Velocity',
-      value: metrics.predictedVelocity,
-      suffix: 'pts',
-      icon: Zap,
-      description: 'Next sprint forecast',
-      color: 'text-warning'
-    },
-    {
       title: 'Team Availability',
       value: metrics.teamAvailabilityConsistency,
       suffix: '%',
@@ -52,7 +44,7 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({ metrics }) => 
   ];
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
       {metricCards.map((metric, index) => (
         <Card key={index} className="hover:shadow-md transition-all duration-300">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
