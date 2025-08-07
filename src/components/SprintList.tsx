@@ -75,7 +75,7 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, onEdit, onDelet
                       {formatDate(sprint.startDate)} - {formatDate(sprint.endDate)}
                     </div>
                     {sprint.teamCapacity && (
-                      <span>Team: {sprint.teamCapacity} members</span>
+                      <span>Team Capacity: {sprint.teamCapacity} pts</span>
                     )}
                     <div className="flex items-center gap-1">
                       <Users className="h-4 w-4" />
