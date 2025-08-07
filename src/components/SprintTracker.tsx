@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
@@ -152,7 +152,7 @@ export const SprintTracker: React.FC = () => {
     setShowManageSprints(false);
   };
 
-  const metrics = calculateMetrics(recentSprintsCount);
+  const metrics = useMemo(() => calculateMetrics(recentSprintsCount), [sprints, recentSprintsCount]);
 
   return (
     <div className="min-h-screen bg-background p-4 md:p-6">
