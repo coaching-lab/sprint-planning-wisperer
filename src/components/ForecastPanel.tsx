@@ -21,8 +21,11 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
       };
     }
 
-    // Use weighted average with more recent sprints having higher weight
-    const recentSprints = sprints.slice(-Math.min(recentSprintsCount, sprints.length)); // Use selected count
+    // Sort sprints by start date descending (most recent first) and take the first recentSprintsCount
+    const sortedSprints = [...sprints].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+    const recentSprints = sortedSprints.slice(0, Math.min(recentSprintsCount, sprints.length)); // First N recent sprints
     let weightedSum = 0;
     let totalWeight = 0;
 

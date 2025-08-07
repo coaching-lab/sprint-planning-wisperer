@@ -71,8 +71,11 @@ export const SprintTracker: React.FC = () => {
       };
     }
 
-    // Use only the recent sprints for all calculations
-    const recentSprints = sprints.slice(-Math.min(recentCount, sprints.length)); // Last N sprints
+    // Sort sprints by start date descending (most recent first) and take the first recentCount
+    const sortedSprints = [...sprints].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+    const recentSprints = sortedSprints.slice(0, Math.min(recentCount, sprints.length)); // First N recent sprints
     
     const totalVelocity = recentSprints.reduce((sum, sprint) => sum + sprint.velocity, 0);
     const totalCompletionRatio = recentSprints.reduce((sum, sprint) => sum + sprint.completionRatio, 0);

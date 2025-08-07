@@ -10,12 +10,14 @@ interface VelocityChartProps {
 }
 
 export const VelocityChart: React.FC<VelocityChartProps> = ({ sprints, detailed = false, recentSprintsCount }) => {
-  // Filter to recent sprints if specified, then sort by start date
+  // Filter to recent sprints if specified - sort by start date descending (most recent first) then take first X
   const filteredSprints = recentSprintsCount && detailed 
-    ? sprints.slice(-Math.min(recentSprintsCount, sprints.length))
+    ? [...sprints]
+        .sort((a, b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime())
+        .slice(0, Math.min(recentSprintsCount, sprints.length))
     : sprints;
   
-  // Sort by start date (oldest first for trend analysis)
+  // Sort by start date ascending for trend analysis display (oldest first for chronological trends)
   const sortedSprints = [...filteredSprints].sort((a, b) => 
     new Date(a.startDate).getTime() - new Date(b.startDate).getTime()
   );
