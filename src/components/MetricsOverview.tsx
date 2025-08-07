@@ -42,7 +42,7 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({ metrics }) => 
       color: 'text-warning'
     },
     {
-      title: 'Team Consistency',
+      title: 'Team Availability',
       value: metrics.teamAvailabilityConsistency,
       suffix: '%',
       icon: Users,
