@@ -73,7 +73,7 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
       teamAvailability: 100,
       notes: ''
     };
-    setEditableSprints(prev => [...prev, newSprint]);
+    setEditableSprints(prev => [newSprint, ...prev]);
   };
 
   const handleDeleteSprint = (id: string) => {
