@@ -6,7 +6,6 @@ export interface SprintCSVData {
   endDate: string;
   plannedPoints: number;
   completedPoints: number;
-  teamCapacity: number;
   teamAvailability: number;
   notes: string;
 }
@@ -18,7 +17,6 @@ export const generateCSVTemplate = (): string => {
     'endDate',
     'plannedPoints',
     'completedPoints',
-    'teamCapacity',
     'teamAvailability',
     'notes'
   ];
@@ -29,7 +27,6 @@ export const generateCSVTemplate = (): string => {
     '2024-01-14',
     '32',
     '28',
-    '30',
     '90',
     'Good sprint, one story moved to next sprint'
   ];
@@ -60,7 +57,6 @@ export const exportSprintsToCSV = (sprints: Sprint[]): void => {
     'endDate',
     'plannedPoints',
     'completedPoints',
-    'teamCapacity',
     'teamAvailability',
     'notes'
   ];
@@ -71,7 +67,6 @@ export const exportSprintsToCSV = (sprints: Sprint[]): void => {
     sprint.endDate,
     sprint.plannedPoints.toString(),
     sprint.completedPoints.toString(),
-    (sprint.teamCapacity || '').toString(),
     sprint.teamAvailability.toString(),
     sprint.notes || ''
   ]);
@@ -106,7 +101,7 @@ export const parseCSVFile = (file: File): Promise<SprintCSVData[]> => {
         }
         
         const headers = lines[0].split(',').map(h => h.trim());
-        const expectedHeaders = ['name', 'startDate', 'endDate', 'plannedPoints', 'completedPoints', 'teamCapacity', 'teamAvailability', 'notes'];
+        const expectedHeaders = ['name', 'startDate', 'endDate', 'plannedPoints', 'completedPoints', 'teamAvailability', 'notes'];
         
         // Validate headers
         const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
@@ -137,7 +132,6 @@ export const parseCSVFile = (file: File): Promise<SprintCSVData[]> => {
             endDate: rowData.endDate || '',
             plannedPoints: parseFloat(rowData.plannedPoints) || 0,
             completedPoints: parseFloat(rowData.completedPoints) || 0,
-            teamCapacity: parseFloat(rowData.teamCapacity) || 0,
             teamAvailability: parseFloat(rowData.teamAvailability) || 100,
             notes: rowData.notes || ''
           };
