@@ -164,7 +164,7 @@ export const SprintTracker: React.FC = () => {
       <div className="max-w-7xl mx-auto space-y-6">
         {/* Header */}
         <div>
-          <h1 className="text-3xl font-bold text-foreground mb-2">Sprint Velocity Tracker</h1>
+          <h1 className="text-3xl font-bold text-foreground mb-2">Sprint Planning Wisperer</h1>
           <p className="text-muted-foreground">
             Track sprint performance, analyze velocity trends, and forecast future capacity
           </p>
