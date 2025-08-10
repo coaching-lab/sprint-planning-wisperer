@@ -7,6 +7,19 @@ import { Textarea } from '@/components/ui/textarea';
 import { X } from 'lucide-react';
 import { Sprint } from '@/types/sprint';
 
+const sanitizeText = (input: string, maxLen = 500): string => {
+  try {
+    return String(input || '')
+      .replace(/[\u0000-\u001F\u007F]/g, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/["'`]/g, '’')
+      .slice(0, maxLen)
+      .trim();
+  } catch {
+    return '';
+  }
+};
+
 interface SprintFormProps {
   sprint?: Sprint;
   sprints: Sprint[];
@@ -65,16 +78,21 @@ export const SprintForm: React.FC<SprintFormProps> = ({ sprint, sprints, onSubmi
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
+    const planned = Math.max(0, parseFloat(formData.plannedPoints) || 0);
+    const completed = Math.max(0, parseFloat(formData.completedPoints) || 0);
+    const availability = Math.max(0, Math.min(100, parseFloat(formData.teamAvailability) || 0));
+    const capacity = parseFloat(formData.teamCapacity) || calculateTeamCapacity(availability);
+
     onSubmit({
-      name: formData.name,
-      startDate: formData.startDate,
-      endDate: formData.endDate,
-      plannedPoints: parseFloat(formData.plannedPoints) || 0,
-      completedPoints: parseFloat(formData.completedPoints) || 0,
-      teamCapacity: parseFloat(formData.teamCapacity) || calculateTeamCapacity(parseFloat(formData.teamAvailability) || 100),
-      teamAvailability: parseFloat(formData.teamAvailability) || 100,
-      notes: formData.notes
+      name: sanitizeText(formData.name, 120),
+      startDate: sanitizeText(formData.startDate, 25),
+      endDate: sanitizeText(formData.endDate, 25),
+      plannedPoints: planned,
+      completedPoints: completed,
+      teamCapacity: capacity,
+      teamAvailability: availability,
+      notes: sanitizeText(formData.notes, 1000)
     });
   };
 

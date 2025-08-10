@@ -10,6 +10,19 @@ import { Sprint } from '@/types/sprint';
 import { downloadCSVTemplate, exportSprintsToCSV, parseCSVFile, SprintCSVData } from '@/utils/csvUtils';
 import { useToast } from '@/hooks/use-toast';
 
+const sanitizeText = (input: string, maxLen = 500): string => {
+  try {
+    return String(input || '')
+      .replace(/[\u0000-\u001F\u007F]/g, '')
+      .replace(/<[^>]*>/g, '')
+      .replace(/["'`]/g, '’')
+      .slice(0, maxLen)
+      .trim();
+  } catch {
+    return '';
+  }
+};
+
 interface ManageSprintsProps {
   sprints: Sprint[];
   onSave: (sprints: Sprint[]) => void;
@@ -81,7 +94,23 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
   };
 
   const handleSave = () => {
-    onSave(editableSprints);
+    const sanitized = editableSprints.map((s) => {
+      const plannedPoints = Math.max(0, s.plannedPoints);
+      const completedPoints = Math.max(0, s.completedPoints);
+      const availability = Math.max(0, Math.min(100, s.teamAvailability));
+      return {
+        ...s,
+        name: sanitizeText(s.name, 120),
+        notes: sanitizeText(s.notes || '', 1000),
+        plannedPoints,
+        completedPoints,
+        teamAvailability: availability,
+        teamCapacity: calculateTeamCapacity(availability),
+        completionRatio: plannedPoints > 0 ? Math.round((completedPoints / plannedPoints) * 1000) / 10 : 0,
+        velocity: completedPoints
+      };
+    });
+    onSave(sanitized);
     toast({
       title: "Sprints Updated",
       description: "All sprint changes have been saved successfully."
@@ -97,22 +126,38 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
     const file = event.target.files?.[0];
     if (!file) return;
 
+    const maxSizeBytes = 1 * 1024 * 1024; // 1MB
+    const isCSV = file.type === 'text/csv' || file.name.toLowerCase().endsWith('.csv');
+    if (!isCSV) {
+      toast({ title: 'Invalid file type', description: 'Please select a .csv file', variant: 'destructive' });
+      return;
+    }
+    if (file.size > maxSizeBytes) {
+      toast({ title: 'File too large', description: 'Max file size is 1MB', variant: 'destructive' });
+      return;
+    }
+
     setImporting(true);
     try {
       const csvData = await parseCSVFile(file);
-      const importedSprints: Sprint[] = csvData.map((data, index) => ({
-        id: Date.now().toString() + index,
-        name: data.name,
-        startDate: data.startDate,
-        endDate: data.endDate,
-        plannedPoints: data.plannedPoints,
-        completedPoints: data.completedPoints,
-        completionRatio: data.plannedPoints > 0 ? Math.round((data.completedPoints / data.plannedPoints) * 1000) / 10 : 0,
-        velocity: data.completedPoints,
-        teamCapacity: calculateTeamCapacity(data.teamAvailability),
-        teamAvailability: data.teamAvailability,
-        notes: data.notes
-      }));
+      const importedSprints: Sprint[] = csvData.map((data, index) => {
+        const plannedPoints = Math.max(0, data.plannedPoints);
+        const completedPoints = Math.max(0, data.completedPoints);
+        const availability = Math.max(0, Math.min(100, data.teamAvailability));
+        return {
+          id: Date.now().toString() + index,
+          name: sanitizeText(data.name, 120),
+          startDate: sanitizeText(data.startDate, 25),
+          endDate: sanitizeText(data.endDate, 25),
+          plannedPoints,
+          completedPoints,
+          completionRatio: plannedPoints > 0 ? Math.round((completedPoints / plannedPoints) * 1000) / 10 : 0,
+          velocity: completedPoints,
+          teamCapacity: calculateTeamCapacity(availability),
+          teamAvailability: availability,
+          notes: sanitizeText(data.notes, 1000)
+        };
+      });
 
       setEditableSprints(prev => [...prev, ...importedSprints]);
       toast({

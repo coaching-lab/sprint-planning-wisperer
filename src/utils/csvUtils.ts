@@ -1,5 +1,21 @@
 import { Sprint } from '@/types/sprint';
 
+// Basic sanitization to reduce XSS risk from imported text
+export const sanitizeText = (input: string, maxLen = 500): string => {
+  try {
+    return String(input || '')
+      .replace(/[\u0000-\u001F\u007F]/g, '') // strip control chars
+      .replace(/<[^>]*>/g, '') // strip HTML tags
+      .replace(/["'`]/g, '’') // soften quotes
+      .slice(0, maxLen)
+      .trim();
+  } catch {
+    return '';
+  }
+};
+
+const clampNumber = (n: number, min: number, max: number) => Math.min(Math.max(n, min), max);
+
 export interface SprintCSVData {
   name: string;
   startDate: string;
@@ -88,63 +104,80 @@ export const exportSprintsToCSV = (sprints: Sprint[]): void => {
 
 export const parseCSVFile = (file: File): Promise<SprintCSVData[]> => {
   return new Promise((resolve, reject) => {
+    // File validation
+    const maxSizeBytes = 1 * 1024 * 1024; // 1MB
+    const isCSV = file.type === 'text/csv' || file.name.toLowerCase().endsWith('.csv');
+    if (!isCSV) {
+      reject(new Error('Invalid file type. Please upload a .csv file.'));
+      return;
+    }
+    if (file.size > maxSizeBytes) {
+      reject(new Error('File is too large. Maximum allowed size is 1MB.'));
+      return;
+    }
+
     const reader = new FileReader();
-    
+
     reader.onload = (e) => {
       try {
-        const text = e.target?.result as string;
+        const text = (e.target?.result as string) || '';
         const lines = text.split('\n').filter(line => line.trim());
-        
+
         if (lines.length < 2) {
           reject(new Error('CSV file must contain at least a header and one data row'));
           return;
         }
-        
+
         const headers = lines[0].split(',').map(h => h.trim());
         const expectedHeaders = ['name', 'startDate', 'endDate', 'plannedPoints', 'completedPoints', 'teamAvailability', 'notes'];
-        
+
         // Validate headers
         const missingHeaders = expectedHeaders.filter(h => !headers.includes(h));
         if (missingHeaders.length > 0) {
           reject(new Error(`Missing required columns: ${missingHeaders.join(', ')}`));
           return;
         }
-        
+
         const data: SprintCSVData[] = [];
-        
+
         for (let i = 1; i < lines.length; i++) {
           const values = lines[i].split(',').map(v => v.trim());
-          
+
           if (values.length !== headers.length) {
             reject(new Error(`Row ${i + 1} has incorrect number of columns`));
             return;
           }
-          
-          const rowData: any = {};
+
+          const rowData: Record<string, string> = {};
           headers.forEach((header, index) => {
-            rowData[header] = values[index];
+            rowData[header] = values[index] ?? '';
           });
-          
-          // Validate and convert data types
+
+          const plannedPoints = Math.max(0, Number.parseFloat(rowData.plannedPoints));
+          const completedPoints = Math.max(0, Number.parseFloat(rowData.completedPoints));
+          const teamAvailabilityRaw = Number.parseFloat(rowData.teamAvailability);
+
           const sprintData: SprintCSVData = {
-            name: rowData.name || '',
-            startDate: rowData.startDate || '',
-            endDate: rowData.endDate || '',
-            plannedPoints: parseFloat(rowData.plannedPoints) || 0,
-            completedPoints: parseFloat(rowData.completedPoints) || 0,
-            teamAvailability: parseFloat(rowData.teamAvailability) || 100,
-            notes: rowData.notes || ''
+            name: sanitizeText(rowData.name, 120),
+            startDate: sanitizeText(rowData.startDate, 25),
+            endDate: sanitizeText(rowData.endDate, 25),
+            plannedPoints: Number.isFinite(plannedPoints) ? plannedPoints : 0,
+            completedPoints: Number.isFinite(completedPoints) ? completedPoints : 0,
+            teamAvailability: Number.isFinite(teamAvailabilityRaw)
+              ? clampNumber(teamAvailabilityRaw, 0, 100)
+              : 100,
+            notes: sanitizeText(rowData.notes, 1000)
           };
-          
+
           data.push(sprintData);
         }
-        
+
         resolve(data);
       } catch (error) {
         reject(new Error('Failed to parse CSV file: ' + (error as Error).message));
       }
     };
-    
+
     reader.onerror = () => reject(new Error('Failed to read file'));
     reader.readAsText(file);
   });
