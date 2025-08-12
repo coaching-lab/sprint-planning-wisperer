@@ -1,8 +1,10 @@
-import React from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Progress } from '@/components/ui/progress';
-import { TrendingUp, AlertTriangle, CheckCircle, Target } from 'lucide-react';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
+import { TrendingUp, AlertTriangle, CheckCircle, Target, Users } from 'lucide-react';
 import { Sprint, SprintMetrics, ForecastData } from '@/types/sprint';
 
 interface ForecastPanelProps {
@@ -12,7 +14,27 @@ interface ForecastPanelProps {
 }
 
 export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, recentSprintsCount }) => {
-  const calculateForecast = (): ForecastData => {
+  // Calculate average team availability from recent sprints
+  const averageTeamAvailability = useMemo(() => {
+    if (sprints.length === 0) return 100;
+    
+    const sortedSprints = [...sprints].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+    const recentSprints = sortedSprints.slice(0, Math.min(recentSprintsCount, sprints.length));
+    
+    const totalAvailability = recentSprints.reduce((sum, sprint) => sum + sprint.teamAvailability, 0);
+    return Math.round(totalAvailability / recentSprints.length);
+  }, [sprints, recentSprintsCount]);
+
+  const [nextSprintAvailability, setNextSprintAvailability] = useState<number>(averageTeamAvailability);
+
+  // Update when average changes
+  React.useEffect(() => {
+    setNextSprintAvailability(averageTeamAvailability);
+  }, [averageTeamAvailability]);
+
+  const calculateForecast = (teamAvailability: number): ForecastData => {
     if (sprints.length < 2) {
       return {
         recommendedPlanning: metrics.averageVelocity || 0,
@@ -37,7 +59,11 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
 
     const weightedAverage = totalWeight > 0 ? weightedSum / totalWeight : 0;
 
-    // Calculate confidence based on consistency
+    // Adjust forecast based on team availability
+    const availabilityFactor = teamAvailability / 100;
+    const adjustedForecast = weightedAverage * availabilityFactor;
+
+    // Calculate confidence based on consistency and team availability factor
     const velocities = recentSprints.map(s => s.velocity);
     const mean = velocities.reduce((sum, v) => sum + v, 0) / velocities.length;
     const variance = velocities.reduce((sum, v) => sum + Math.pow(v - mean, 2), 0) / velocities.length;
@@ -45,16 +71,27 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
     const coefficientOfVariation = mean > 0 ? stdDev / mean : 1;
     
     // Lower coefficient of variation means higher confidence
-    const confidenceLevel = Math.max(0, Math.min(100, (1 - coefficientOfVariation) * 100));
+    let confidenceLevel = Math.max(0, Math.min(100, (1 - coefficientOfVariation) * 100));
+    
+    // Adjust confidence based on team availability consistency
+    const availabilities = recentSprints.map(s => s.teamAvailability);
+    const avgAvailability = availabilities.reduce((sum, a) => sum + a, 0) / availabilities.length;
+    const availabilityVariance = availabilities.reduce((sum, a) => sum + Math.pow(a - avgAvailability, 2), 0) / availabilities.length;
+    const availabilityStdDev = Math.sqrt(availabilityVariance);
+    const availabilityCoV = avgAvailability > 0 ? availabilityStdDev / avgAvailability : 0;
+    
+    // Reduce confidence if team availability varies significantly from historical average
+    const availabilityDifference = Math.abs(teamAvailability - avgAvailability) / 100;
+    confidenceLevel = confidenceLevel * (1 - availabilityDifference * 0.5) * (1 - availabilityCoV * 0.3);
 
     return {
-      recommendedPlanning: Math.round(weightedAverage),
-      confidenceLevel: Math.round(confidenceLevel),
+      recommendedPlanning: Math.round(adjustedForecast),
+      confidenceLevel: Math.round(Math.max(0, Math.min(100, confidenceLevel))),
       basedOnSprints: recentSprints.length
     };
   };
 
-  const forecastData = calculateForecast();
+  const forecastData = calculateForecast(nextSprintAvailability);
 
   const getConfidenceColor = (confidence: number) => {
     if (confidence >= 80) return 'text-success';
@@ -97,6 +134,29 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
       });
     }
 
+    // Team availability recommendations
+    if (nextSprintAvailability < averageTeamAvailability - 10) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Reduced Team Availability',
+        message: `Team availability (${nextSprintAvailability}%) is significantly lower than average (${averageTeamAvailability}%). Consider reducing planned work accordingly.`
+      });
+    } else if (nextSprintAvailability > averageTeamAvailability + 10) {
+      recommendations.push({
+        type: 'success',
+        title: 'Increased Team Availability',
+        message: `Team availability (${nextSprintAvailability}%) is higher than average (${averageTeamAvailability}%). This is a good opportunity to tackle more challenging work.`
+      });
+    }
+
+    if (nextSprintAvailability < 70) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Low Team Availability',
+        message: 'With low team availability, focus on high-priority items and consider moving non-critical work to future sprints.'
+      });
+    }
+
     const trend = sprints.length >= 3 ? 
       sprints.slice(-3).reduce((sum, s) => sum + s.velocity, 0) / 3 - 
       sprints.slice(0, -3).reduce((sum, s) => sum + s.velocity, 0) / Math.max(1, sprints.length - 3) : 0;
@@ -122,6 +182,48 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
 
   return (
     <div className="space-y-6">
+      {/* Team Availability Input */}
+      <Card className="bg-muted/30">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5 text-primary" />
+            Next Sprint Planning
+          </CardTitle>
+          <CardDescription>
+            Configure team availability for the next sprint to get accurate forecasts
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <Label htmlFor="team-availability">Team Availability (%)</Label>
+              <Input
+                id="team-availability"
+                type="number"
+                min="0"
+                max="100"
+                value={nextSprintAvailability}
+                onChange={(e) => setNextSprintAvailability(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+                className="text-center text-lg font-medium"
+              />
+              <p className="text-xs text-muted-foreground">
+                Average from last {recentSprintsCount} sprint{recentSprintsCount !== 1 ? 's' : ''}: {averageTeamAvailability}%
+              </p>
+            </div>
+            <div className="flex items-center justify-center">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-primary mb-1">
+                  {forecastData.recommendedPlanning} pts
+                </div>
+                <div className="text-sm text-muted-foreground">
+                  Adjusted Forecast
+                </div>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* Forecast Summary */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="shadow-lg border-l-4 border-l-primary">
@@ -182,7 +284,7 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
-              <div className="flex justify-between items-center p-3 bg-success/5 rounded-lg border border-success/20">
+                <div className="flex justify-between items-center p-3 bg-success/5 rounded-lg border border-success/20">
                 <div>
                   <span className="font-medium text-success">Conservative</span>
                   <p className="text-xs text-muted-foreground">90% confidence</p>
@@ -195,7 +297,7 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
               <div className="flex justify-between items-center p-3 bg-primary/5 rounded-lg border border-primary/20">
                 <div>
                   <span className="font-medium text-primary">Recommended</span>
-                  <p className="text-xs text-muted-foreground">Best estimate</p>
+                  <p className="text-xs text-muted-foreground">Based on {nextSprintAvailability}% availability</p>
                 </div>
                 <Badge variant="outline" className="text-primary border-primary">
                   {forecastData.recommendedPlanning} pts
