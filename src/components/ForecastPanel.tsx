@@ -6,6 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { TrendingUp, AlertTriangle, CheckCircle, Target, Users } from 'lucide-react';
 import { Sprint, SprintMetrics, ForecastData } from '@/types/sprint';
+import { TeamAvailabilityConfig, type TeamMember } from '@/components/TeamAvailabilityConfig';
 
 interface ForecastPanelProps {
   sprints: Sprint[];
@@ -28,11 +29,17 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
   }, [sprints, recentSprintsCount]);
 
   const [nextSprintAvailability, setNextSprintAvailability] = useState<number>(averageTeamAvailability);
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
 
   // Update when average changes
   React.useEffect(() => {
     setNextSprintAvailability(averageTeamAvailability);
   }, [averageTeamAvailability]);
+
+  const handleAvailabilityConfigChange = (availability: number, members: TeamMember[]) => {
+    setNextSprintAvailability(availability);
+    setTeamMembers(members);
+  };
 
   const calculateForecast = (teamAvailability: number): ForecastData => {
     if (sprints.length < 2) {
@@ -195,20 +202,26 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="space-y-2">
-              <Label htmlFor="team-availability">Team Availability (%)</Label>
-              <Input
-                id="team-availability"
-                type="number"
-                min="0"
-                max="100"
-                value={nextSprintAvailability}
-                onChange={(e) => setNextSprintAvailability(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
-                className="text-center text-lg font-medium"
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="team-availability">Team Availability (%)</Label>
+                <Input
+                  id="team-availability"
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={nextSprintAvailability}
+                  onChange={(e) => setNextSprintAvailability(Math.max(0, Math.min(100, parseInt(e.target.value) || 0)))}
+                  className="text-center text-lg font-medium"
+                />
+                <p className="text-xs text-muted-foreground">
+                  Average from last {recentSprintsCount} sprint{recentSprintsCount !== 1 ? 's' : ''}: {averageTeamAvailability}%
+                </p>
+              </div>
+              <TeamAvailabilityConfig
+                currentAvailability={nextSprintAvailability}
+                onAvailabilityChange={handleAvailabilityConfigChange}
               />
-              <p className="text-xs text-muted-foreground">
-                Average from last {recentSprintsCount} sprint{recentSprintsCount !== 1 ? 's' : ''}: {averageTeamAvailability}%
-              </p>
             </div>
             <div className="flex items-center justify-center">
               <div className="text-center">
