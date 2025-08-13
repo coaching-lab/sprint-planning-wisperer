@@ -101,7 +101,16 @@ export const TeamAvailabilityConfig: React.FC<TeamAvailabilityConfigProps> = ({
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="outline" size="sm" className="gap-2">
+        <Button 
+          variant="outline" 
+          size="sm" 
+          className="gap-2"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            setIsOpen(true);
+          }}
+        >
           <Settings className="h-4 w-4" />
           Configure Team Availability
         </Button>
