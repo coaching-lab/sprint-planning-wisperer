@@ -35,10 +35,10 @@ export const MetricsOverview: React.FC<MetricsOverviewProps> = ({ metrics }) => 
     },
     {
       title: 'Team Availability',
-      value: metrics.teamAvailabilityConsistency,
+      value: metrics.averageTeamAvailability,
       suffix: '%',
       icon: Users,
-      description: 'Availability stability',
+      description: 'Average team availability',
       color: 'text-info'
     }
   ];

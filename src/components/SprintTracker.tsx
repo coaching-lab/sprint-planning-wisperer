@@ -67,6 +67,7 @@ export const SprintTracker: React.FC = () => {
         averageCompletionRatio: 0,
         totalSprints: 0,
         predictedVelocity: 0,
+        averageTeamAvailability: 0,
         teamAvailabilityConsistency: 0
       };
     }
@@ -103,6 +104,7 @@ export const SprintTracker: React.FC = () => {
       averageCompletionRatio: Math.round(totalCompletionRatio / recentSprints.length),
       totalSprints: recentSprints.length,
       predictedVelocity,
+      averageTeamAvailability: Math.round(avgAvailability),
       teamAvailabilityConsistency: Math.round(consistency)
     };
   };
