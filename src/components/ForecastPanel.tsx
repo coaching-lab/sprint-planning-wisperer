@@ -30,11 +30,13 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
 
   const [nextSprintAvailability, setNextSprintAvailability] = useState<number>(averageTeamAvailability);
   const [teamMembers, setTeamMembers] = useState<TeamMember[]>([]);
+  const [trendAnalysisSprintCount, setTrendAnalysisSprintCount] = useState<number>(Math.min(5, sprints.length));
 
-  // Update when average changes
+  // Update when average changes or sprint count changes
   React.useEffect(() => {
     setNextSprintAvailability(averageTeamAvailability);
-  }, [averageTeamAvailability]);
+    setTrendAnalysisSprintCount(Math.max(2, Math.min(5, sprints.length)));
+  }, [averageTeamAvailability, sprints.length]);
 
   const handleAvailabilityConfigChange = (availability: number, members: TeamMember[]) => {
     setNextSprintAvailability(availability);
@@ -117,72 +119,175 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
   const getRecommendations = () => {
     const recommendations = [];
     
-    if (forecastData.confidenceLevel < 60) {
+    if (sprints.length === 0) return recommendations;
+
+    // Sort sprints by start date descending (most recent first)
+    const sortedSprints = [...sprints].sort((a, b) => 
+      new Date(b.startDate).getTime() - new Date(a.startDate).getTime()
+    );
+    
+    // Get sprints for trend analysis
+    const trendSprints = sortedSprints.slice(0, Math.min(trendAnalysisSprintCount, sprints.length));
+    
+    if (trendSprints.length < 2) {
+      recommendations.push({
+        type: 'info',
+        title: 'Insufficient Data for Trend Analysis',
+        message: `Need at least 2 sprints for trend analysis. Currently analyzing ${trendSprints.length} sprint${trendSprints.length !== 1 ? 's' : ''}.`
+      });
+      return recommendations;
+    }
+
+    // 1. VELOCITY TREND ANALYSIS
+    const velocities = trendSprints.map(s => s.velocity);
+    const velocityTrend = calculateTrend(velocities);
+    
+    if (velocityTrend.slope > 1) {
+      recommendations.push({
+        type: 'success',
+        title: 'Velocity Improving',
+        message: `Team velocity is trending upward (+${velocityTrend.slope.toFixed(1)} pts/sprint). Keep up the momentum! Consider what's working well and apply it consistently.`
+      });
+    } else if (velocityTrend.slope < -1) {
       recommendations.push({
         type: 'warning',
-        title: 'Low Confidence',
-        message: 'Your velocity varies significantly. Consider analyzing what causes these variations.'
+        title: 'Velocity Declining',
+        message: `Team velocity is trending downward (${velocityTrend.slope.toFixed(1)} pts/sprint). Investigate potential blockers, technical debt, or team capacity issues.`
       });
     }
 
-    if (metrics.averageCompletionRatio < 80) {
+    // 2. COMPLETION RATIO TREND ANALYSIS
+    const completionRatios = trendSprints.map(s => s.completionRatio);
+    const completionTrend = calculateTrend(completionRatios);
+    
+    if (completionTrend.slope > 5) {
+      recommendations.push({
+        type: 'success',
+        title: 'Completion Rate Improving',
+        message: `Sprint completion rate is improving (+${completionTrend.slope.toFixed(1)}%/sprint). Your estimation and planning are getting more accurate.`
+      });
+    } else if (completionTrend.slope < -5) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Completion Rate Declining',
+        message: `Sprint completion rate is declining (${completionTrend.slope.toFixed(1)}%/sprint). Consider reducing planned points or improving story estimation.`
+      });
+    }
+
+    // 3. TEAM AVAILABILITY TREND ANALYSIS
+    const availabilities = trendSprints.map(s => s.teamAvailability);
+    const availabilityTrend = calculateTrend(availabilities);
+    
+    if (availabilityTrend.slope < -5) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Team Availability Declining',
+        message: `Team availability is trending downward (${availabilityTrend.slope.toFixed(1)}%/sprint). Monitor team workload and consider capacity planning adjustments.`
+      });
+    }
+
+    // 4. CONSISTENCY ANALYSIS
+    const velocityConsistency = calculateConsistency(velocities);
+    const completionConsistency = calculateConsistency(completionRatios);
+    
+    if (velocityConsistency < 0.7) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Velocity Inconsistency',
+        message: `High velocity variation detected (consistency: ${(velocityConsistency * 100).toFixed(0)}%). Focus on breaking down stories more consistently and identifying factors causing variation.`
+      });
+    }
+
+    if (completionConsistency < 0.7) {
       recommendations.push({
         type: 'info',
-        title: 'Completion Rate',
-        message: 'Consider planning slightly fewer points to improve completion rates.'
+        title: 'Completion Rate Variability',
+        message: `Completion rates vary significantly (consistency: ${(completionConsistency * 100).toFixed(0)}%). Review estimation practices and sprint planning process.`
       });
     }
 
-    if (sprints.length < 3) {
+    // 5. OVERCOMMITMENT ANALYSIS
+    const overcommittedSprints = trendSprints.filter(s => s.completionRatio < 80);
+    if (overcommittedSprints.length > trendSprints.length * 0.5) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Frequent Overcommitment',
+        message: `${overcommittedSprints.length} out of ${trendSprints.length} recent sprints had <80% completion. Consider more conservative planning or improving story breakdown.`
+      });
+    }
+
+    // 6. UNDERUTILIZATION ANALYSIS
+    const underutilizedSprints = trendSprints.filter(s => s.completionRatio >= 100);
+    if (underutilizedSprints.length > trendSprints.length * 0.6) {
       recommendations.push({
         type: 'info',
-        title: 'More Data Needed',
-        message: 'Add more sprint data for more accurate forecasting.'
+        title: 'Potential Underutilization',
+        message: `${underutilizedSprints.length} out of ${trendSprints.length} recent sprints were completed at 100%+. Consider planning more ambitious goals or tackling technical debt.`
       });
     }
 
-    // Team availability recommendations
+    // 7. TEAM AVAILABILITY RECOMMENDATIONS
     if (nextSprintAvailability < averageTeamAvailability - 10) {
       recommendations.push({
         type: 'warning',
         title: 'Reduced Team Availability',
-        message: `Team availability (${nextSprintAvailability}%) is significantly lower than average (${averageTeamAvailability}%). Consider reducing planned work accordingly.`
+        message: `Team availability (${nextSprintAvailability}%) is significantly lower than average (${averageTeamAvailability}%). Consider reducing planned work by ${Math.round((averageTeamAvailability - nextSprintAvailability) * 0.8)}%.`
       });
     } else if (nextSprintAvailability > averageTeamAvailability + 10) {
       recommendations.push({
         type: 'success',
         title: 'Increased Team Availability',
-        message: `Team availability (${nextSprintAvailability}%) is higher than average (${averageTeamAvailability}%). This is a good opportunity to tackle more challenging work.`
+        message: `Team availability (${nextSprintAvailability}%) is higher than average (${averageTeamAvailability}%). Good opportunity for stretch goals or technical improvements.`
       });
     }
 
-    if (nextSprintAvailability < 70) {
+    // 8. FORECAST CONFIDENCE RECOMMENDATIONS
+    if (forecastData.confidenceLevel < 60) {
       recommendations.push({
         type: 'warning',
-        title: 'Low Team Availability',
-        message: 'With low team availability, focus on high-priority items and consider moving non-critical work to future sprints.'
+        title: 'Low Forecast Confidence',
+        message: `Forecast confidence is ${forecastData.confidenceLevel}%. Focus on consistent story sizing, reducing external dependencies, and stabilizing team composition.`
       });
     }
 
-    const trend = sprints.length >= 3 ? 
-      sprints.slice(-3).reduce((sum, s) => sum + s.velocity, 0) / 3 - 
-      sprints.slice(0, -3).reduce((sum, s) => sum + s.velocity, 0) / Math.max(1, sprints.length - 3) : 0;
-
-    if (trend > 2) {
+    // 9. DATA SUFFICIENCY
+    if (trendSprints.length < 5) {
       recommendations.push({
-        type: 'success',
-        title: 'Improving Velocity',
-        message: 'Your team velocity is trending upward. Great progress!'
-      });
-    } else if (trend < -2) {
-      recommendations.push({
-        type: 'warning',
-        title: 'Declining Velocity',
-        message: 'Velocity is trending downward. Consider investigating potential blockers.'
+        type: 'info',
+        title: 'Limited Historical Data',
+        message: `Analysis based on ${trendSprints.length} sprints. Recommendations will become more accurate with more historical data (target: 5+ sprints).`
       });
     }
 
     return recommendations;
+  };
+
+  // Helper function to calculate linear trend (slope)
+  const calculateTrend = (values: number[]) => {
+    if (values.length < 2) return { slope: 0 };
+    
+    const n = values.length;
+    const xSum = (n * (n - 1)) / 2; // Sum of indices 0, 1, 2, ...
+    const ySum = values.reduce((sum, val) => sum + val, 0);
+    const xySum = values.reduce((sum, val, i) => sum + (i * val), 0);
+    const xxSum = values.reduce((sum, _, i) => sum + (i * i), 0);
+    
+    const slope = (n * xySum - xSum * ySum) / (n * xxSum - xSum * xSum);
+    return { slope: isNaN(slope) ? 0 : slope };
+  };
+
+  // Helper function to calculate consistency (inverse of coefficient of variation)
+  const calculateConsistency = (values: number[]) => {
+    if (values.length < 2) return 1;
+    
+    const mean = values.reduce((sum, val) => sum + val, 0) / values.length;
+    if (mean === 0) return 1;
+    
+    const variance = values.reduce((sum, val) => sum + Math.pow(val - mean, 2), 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+    const coefficientOfVariation = stdDev / mean;
+    
+    return Math.max(0, 1 - coefficientOfVariation);
   };
 
   const recommendations = getRecommendations();
@@ -336,10 +441,27 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
       {recommendations.length > 0 && (
         <Card>
           <CardHeader>
-            <CardTitle>Recommendations</CardTitle>
-            <CardDescription>
-              Insights and suggestions based on your sprint data
-            </CardDescription>
+            <div className="flex items-center justify-between">
+              <div>
+                <CardTitle>Recommendations</CardTitle>
+                <CardDescription>
+                  Insights and suggestions based on your sprint data
+                </CardDescription>
+              </div>
+              <div className="flex items-center gap-2">
+                <Label htmlFor="trend-sprints" className="text-sm">Analyze last</Label>
+                <Input
+                  id="trend-sprints"
+                  type="number"
+                  min="2"
+                  max={Math.min(10, sprints.length)}
+                  value={trendAnalysisSprintCount}
+                  onChange={(e) => setTrendAnalysisSprintCount(Math.max(2, Math.min(10, parseInt(e.target.value) || 2)))}
+                  className="w-16 text-center"
+                />
+                <span className="text-sm text-muted-foreground">sprints</span>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
             <div className="space-y-3">
