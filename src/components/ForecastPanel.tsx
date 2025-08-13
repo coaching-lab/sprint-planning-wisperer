@@ -220,6 +220,7 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
               </div>
               <TeamAvailabilityConfig
                 currentAvailability={nextSprintAvailability}
+                initialTeamMembers={teamMembers}
                 onAvailabilityChange={handleAvailabilityConfigChange}
               />
             </div>

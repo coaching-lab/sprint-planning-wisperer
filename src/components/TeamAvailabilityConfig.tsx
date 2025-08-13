@@ -17,15 +17,18 @@ export interface TeamMember {
 
 interface TeamAvailabilityConfigProps {
   currentAvailability: number;
+  initialTeamMembers?: TeamMember[];
   onAvailabilityChange: (availability: number, teamMembers: TeamMember[]) => void;
 }
 
 export const TeamAvailabilityConfig: React.FC<TeamAvailabilityConfigProps> = ({
   currentAvailability,
+  initialTeamMembers,
   onAvailabilityChange
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [teamMembers, setTeamMembers] = useState<TeamMember[]>([
+  
+  const getDefaultTeamMembers = (): TeamMember[] => [
     {
       id: '1',
       name: 'Ana',
@@ -40,7 +43,18 @@ export const TeamAvailabilityConfig: React.FC<TeamAvailabilityConfigProps> = ({
       daysAvailable: 8,
       availabilityPercentage: 80
     }
-  ]);
+  ];
+
+  const [teamMembers, setTeamMembers] = useState<TeamMember[]>(
+    initialTeamMembers && initialTeamMembers.length > 0 ? initialTeamMembers : getDefaultTeamMembers()
+  );
+
+  // Update team members when initialTeamMembers prop changes
+  React.useEffect(() => {
+    if (initialTeamMembers && initialTeamMembers.length > 0) {
+      setTeamMembers(initialTeamMembers);
+    }
+  }, [initialTeamMembers]);
 
   const calculateAvailabilityPercentage = (totalDays: number, availableDays: number): number => {
     if (totalDays === 0) return 0;
