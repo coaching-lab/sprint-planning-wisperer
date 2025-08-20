@@ -17,78 +17,98 @@ export const sanitizeText = (input: string, maxLen = 500): string => {
 // Validate and format date to YYYY-MM-DD format
 export const validateAndFormatDate = (dateInput: string): string => {
   try {
-    const cleanInput = sanitizeText(dateInput, 25);
+    const cleanInput = sanitizeText(dateInput, 25).trim();
     if (!cleanInput) return new Date().toISOString().split('T')[0];
     
-    // Try to parse various common date formats
-    const formats = [
-      // Already in correct format
-      /^\d{4}-\d{2}-\d{2}$/,
-      // MM/DD/YYYY or DD/MM/YYYY
-      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/,
-      // MM/DD/YY or DD/MM/YY
-      /^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/,
-      // YYYY/MM/DD
-      /^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/
-    ];
+    // Remove any extra quotes or spaces
+    const normalizedInput = cleanInput.replace(/['"]/g, '').trim();
     
-    // If already in YYYY-MM-DD format, validate it
-    if (formats[0].test(cleanInput)) {
-      const date = new Date(cleanInput);
+    // If already in YYYY-MM-DD format, validate and return
+    if (/^\d{4}-\d{2}-\d{2}$/.test(normalizedInput)) {
+      const date = new Date(normalizedInput + 'T00:00:00');
       if (!isNaN(date.getTime())) {
-        return cleanInput;
+        return normalizedInput;
       }
     }
     
-    // Try MM/DD/YYYY or DD/MM/YYYY format
-    const mdyMatch = cleanInput.match(formats[1]);
-    if (mdyMatch) {
-      const [, first, second, year] = mdyMatch;
-      // Assume MM/DD/YYYY format (US standard)
-      const month = parseInt(first, 10);
-      const day = parseInt(second, 10);
-      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        const date = new Date(parseInt(year, 10), month - 1, day);
-        if (!isNaN(date.getTime())) {
-          return date.toISOString().split('T')[0];
+    // Handle MM/DD/YYYY format
+    const mmddyyyyMatch = normalizedInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (mmddyyyyMatch) {
+      const [, month, day, year] = mmddyyyyMatch;
+      const monthNum = parseInt(month, 10);
+      const dayNum = parseInt(day, 10);
+      const yearNum = parseInt(year, 10);
+      
+      if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31 && yearNum >= 1900 && yearNum <= 2100) {
+        const date = new Date(yearNum, monthNum - 1, dayNum);
+        if (!isNaN(date.getTime()) && date.getFullYear() === yearNum && date.getMonth() === monthNum - 1 && date.getDate() === dayNum) {
+          return `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
         }
       }
     }
     
-    // Try MM/DD/YY format
-    const mdyShortMatch = cleanInput.match(formats[2]);
-    if (mdyShortMatch) {
-      const [, first, second, yearShort] = mdyShortMatch;
-      const month = parseInt(first, 10);
-      const day = parseInt(second, 10);
-      const year = parseInt(yearShort, 10) + (parseInt(yearShort, 10) > 50 ? 1900 : 2000);
-      if (month >= 1 && month <= 12 && day >= 1 && day <= 31) {
-        const date = new Date(year, month - 1, day);
-        if (!isNaN(date.getTime())) {
-          return date.toISOString().split('T')[0];
+    // Handle DD/MM/YYYY format (European)
+    const ddmmyyyyMatch = normalizedInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{4})$/);
+    if (ddmmyyyyMatch) {
+      const [, day, month, year] = ddmmyyyyMatch;
+      const dayNum = parseInt(day, 10);
+      const monthNum = parseInt(month, 10);
+      const yearNum = parseInt(year, 10);
+      
+      // Try DD/MM/YYYY if day > 12 or month <= 12
+      if (dayNum > 12 || (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31 && yearNum >= 1900 && yearNum <= 2100)) {
+        const date = new Date(yearNum, monthNum - 1, dayNum);
+        if (!isNaN(date.getTime()) && date.getFullYear() === yearNum && date.getMonth() === monthNum - 1 && date.getDate() === dayNum) {
+          return `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
         }
       }
     }
     
-    // Try YYYY/MM/DD format
-    const ymdMatch = cleanInput.match(formats[3]);
-    if (ymdMatch) {
-      const [, year, month, day] = ymdMatch;
-      const date = new Date(parseInt(year, 10), parseInt(month, 10) - 1, parseInt(day, 10));
-      if (!isNaN(date.getTime())) {
-        return date.toISOString().split('T')[0];
+    // Handle YYYY/MM/DD format
+    const yyyymmddMatch = normalizedInput.match(/^(\d{4})[\/\-](\d{1,2})[\/\-](\d{1,2})$/);
+    if (yyyymmddMatch) {
+      const [, year, month, day] = yyyymmddMatch;
+      const yearNum = parseInt(year, 10);
+      const monthNum = parseInt(month, 10);
+      const dayNum = parseInt(day, 10);
+      
+      if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31 && yearNum >= 1900 && yearNum <= 2100) {
+        const date = new Date(yearNum, monthNum - 1, dayNum);
+        if (!isNaN(date.getTime()) && date.getFullYear() === yearNum && date.getMonth() === monthNum - 1 && date.getDate() === dayNum) {
+          return `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        }
       }
     }
     
-    // Try generic Date parsing as fallback
-    const fallbackDate = new Date(cleanInput);
+    // Handle MM/DD/YY format (with 2-digit year)
+    const mmddyyMatch = normalizedInput.match(/^(\d{1,2})[\/\-](\d{1,2})[\/\-](\d{2})$/);
+    if (mmddyyMatch) {
+      const [, month, day, yearShort] = mmddyyMatch;
+      const monthNum = parseInt(month, 10);
+      const dayNum = parseInt(day, 10);
+      const yearShortNum = parseInt(yearShort, 10);
+      const yearNum = yearShortNum >= 50 ? 1900 + yearShortNum : 2000 + yearShortNum;
+      
+      if (monthNum >= 1 && monthNum <= 12 && dayNum >= 1 && dayNum <= 31) {
+        const date = new Date(yearNum, monthNum - 1, dayNum);
+        if (!isNaN(date.getTime()) && date.getFullYear() === yearNum && date.getMonth() === monthNum - 1 && date.getDate() === dayNum) {
+          return `${yearNum}-${String(monthNum).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+        }
+      }
+    }
+    
+    // Try parsing as ISO date string or other standard formats
+    const fallbackDate = new Date(normalizedInput);
     if (!isNaN(fallbackDate.getTime())) {
       return fallbackDate.toISOString().split('T')[0];
     }
     
     // Return current date if all parsing fails
+    console.warn(`Unable to parse date: "${dateInput}", using current date`);
     return new Date().toISOString().split('T')[0];
-  } catch {
+    
+  } catch (error) {
+    console.warn(`Error parsing date: "${dateInput}", using current date`, error);
     return new Date().toISOString().split('T')[0];
   }
 };
