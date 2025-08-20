@@ -147,8 +147,8 @@ export const ManageSprints: React.FC<ManageSprintsProps> = ({ sprints, onSave, o
         return {
           id: Date.now().toString() + index,
           name: sanitizeText(data.name, 120),
-          startDate: sanitizeText(data.startDate, 25),
-          endDate: sanitizeText(data.endDate, 25),
+          startDate: data.startDate,
+          endDate: data.endDate,
           plannedPoints,
           completedPoints,
           completionRatio: plannedPoints > 0 ? Math.round((completedPoints / plannedPoints) * 1000) / 10 : 0,
