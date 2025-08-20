@@ -21,7 +21,9 @@ export const SprintList: React.FC<SprintListProps> = ({ sprints, recentSprintsCo
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('en-GB', {
+    // Ensure proper parsing of YYYY-MM-DD format
+    const date = new Date(dateString + 'T00:00:00');
+    return date.toLocaleDateString('en-GB', {
       month: 'short',
       day: 'numeric',
       year: 'numeric'
