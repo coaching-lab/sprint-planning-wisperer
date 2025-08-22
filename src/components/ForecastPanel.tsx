@@ -61,7 +61,7 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
     let totalWeight = 0;
 
     recentSprints.forEach((sprint, index) => {
-      const weight = index + 1; // More recent sprints get higher weight
+      const weight = recentSprints.length - index; // More recent sprints get higher weight
       weightedSum += sprint.velocity * weight;
       totalWeight += weight;
     });
