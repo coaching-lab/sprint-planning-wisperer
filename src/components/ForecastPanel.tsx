@@ -190,23 +190,73 @@ export const ForecastPanel: React.FC<ForecastPanelProps> = ({ sprints, metrics, 
       });
     }
 
-    // 4. CONSISTENCY ANALYSIS
+    // 4. DELIVERY CONSISTENCY ANALYSIS
     const velocityConsistency = calculateConsistency(velocities);
     const completionConsistency = calculateConsistency(completionRatios);
     
-    if (velocityConsistency < 0.7) {
+    // Calculate delivery predictability
+    const velocityRange = Math.max(...velocities) - Math.min(...velocities);
+    const velocityMean = velocities.reduce((sum, v) => sum + v, 0) / velocities.length;
+    const velocityVariationPercent = velocityMean > 0 ? (velocityRange / velocityMean) * 100 : 0;
+    
+    const completionRange = Math.max(...completionRatios) - Math.min(...completionRatios);
+    const completionMean = completionRatios.reduce((sum, c) => sum + c, 0) / completionRatios.length;
+    
+    // Overall consistency score combining velocity and completion consistency
+    const overallConsistency = (velocityConsistency + completionConsistency) / 2;
+    
+    if (overallConsistency >= 0.8) {
+      recommendations.push({
+        type: 'success',
+        title: 'Excellent Delivery Consistency',
+        message: `Team shows high consistency in both velocity (${(velocityConsistency * 100).toFixed(0)}%) and completion rates (${(completionConsistency * 100).toFixed(0)}%). This indicates mature estimation and reliable delivery patterns.`
+      });
+    } else if (overallConsistency >= 0.6) {
+      recommendations.push({
+        type: 'info',
+        title: 'Moderate Delivery Consistency',
+        message: `Delivery consistency is moderate (${(overallConsistency * 100).toFixed(0)}%). Velocity varies by ${velocityVariationPercent.toFixed(0)}% and completion rates by ${completionRange.toFixed(0)}%. Focus on improving story estimation accuracy.`
+      });
+    } else {
       recommendations.push({
         type: 'warning',
-        title: 'Velocity Inconsistency',
-        message: `High velocity variation detected (consistency: ${(velocityConsistency * 100).toFixed(0)}%). Focus on breaking down stories more consistently and identifying factors causing variation.`
+        title: 'Inconsistent Delivery Pattern',
+        message: `Low delivery consistency detected (${(overallConsistency * 100).toFixed(0)}%). Velocity ranges from ${Math.min(...velocities)} to ${Math.max(...velocities)} pts, completion rates vary by ${completionRange.toFixed(0)}%. Consider sprint retrospectives to identify root causes.`
       });
     }
 
+    // Specific velocity consistency insights
+    if (velocityConsistency < 0.7) {
+      const volatileSprints = trendSprints.filter(s => Math.abs(s.velocity - velocityMean) > velocityMean * 0.3).length;
+      recommendations.push({
+        type: 'warning',
+        title: 'Velocity Inconsistency Details',
+        message: `${volatileSprints} out of ${trendSprints.length} sprints had velocity >30% different from average. Consider breaking down large stories, reducing dependencies, and stabilizing team composition.`
+      });
+    }
+
+    // Completion rate consistency insights
     if (completionConsistency < 0.7) {
+      const inconsistentSprints = trendSprints.filter(s => Math.abs(s.completionRatio - completionMean) > 20).length;
       recommendations.push({
         type: 'info',
-        title: 'Completion Rate Variability',
-        message: `Completion rates vary significantly (consistency: ${(completionConsistency * 100).toFixed(0)}%). Review estimation practices and sprint planning process.`
+        title: 'Completion Rate Patterns',
+        message: `${inconsistentSprints} out of ${trendSprints.length} sprints had completion rates >20% different from average (${completionMean.toFixed(0)}%). Review story sizing and sprint planning rituals.`
+      });
+    }
+
+    // Predictability insights
+    if (velocityVariationPercent > 50) {
+      recommendations.push({
+        type: 'warning',
+        title: 'Low Predictability',
+        message: `Velocity varies by ${velocityVariationPercent.toFixed(0)}%, making sprint planning challenging. Focus on consistent story pointing, reducing scope changes mid-sprint, and improving team stability.`
+      });
+    } else if (velocityVariationPercent < 20) {
+      recommendations.push({
+        type: 'success',
+        title: 'High Predictability',
+        message: `Low velocity variation (${velocityVariationPercent.toFixed(0)}%) indicates excellent predictability. Team can confidently commit to consistent delivery targets.`
       });
     }
 
